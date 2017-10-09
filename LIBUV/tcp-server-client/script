@@ -1,0 +1,144 @@
+#! /bin/bash
+clear
+echo "					Compiling all dependencies ..."
+gcc server.c -o server /usr/local/lib/libuv.a -lpthread
+gcc client.c -o client  /usr/local/lib/libuv.a -lpthread
+gcc pcap_reader.c -o pcap_reader -lpcap 
+gcc pcap_writer.c -o pcap_writer -lpcap
+echo
+read -p "				Done !!    Press ENTER to initiatea a Mainmenu ..."
+
+mainmenu()
+{
+	echo
+	echo "				---------------------- MAINMENU ---------------------"
+	echo
+	echo "				1    ----->>>> 	 Capture packets to a pcap file "
+	echo "         			2    ----->>>> 	 Read a pcap file to terminal "
+	echo "         			3    ----->>>> 	 Receive a pcap file (BE THE SERVER) "
+	echo "         			4    ----->>>> 	 Send a pcap file (BE THE CLIENT) "
+	echo "         			else ----->>>> 	 EXIT"
+	echo
+	echo "				------------------------------------------------------"
+	read -n1 -p  "				Enter your choice : "
+	
+	case $REPLY in
+	
+	'1')    capture_packets 
+		mainmenu
+		echo	;;
+		
+	'2')    read_packets
+		mainmenu
+		echo	;;
+	
+	'3')    server
+		mainmenu
+		echo 	;;
+
+	'4')    client  
+		echo
+		mainmenu
+		echo	;;
+	
+	*)      cleanup   
+	
+	esac
+}
+
+capture_packets()
+{
+	clear
+	echo "				Lets capture some packets and write them to a pcap file ...!!!"
+	echo
+	read -p "			Enter pcap filename to write to : " file
+	rm -rf $file
+	touch $file
+	echo    "			created file : $file"
+	echo
+	read -p "			Enter filter expression : " filter
+	echo    "			filter exp : " $filter
+	echo
+	read -p "			Enter number of packets to capture : " packets
+	echo    "			packets : " $packets
+	echo
+	read -n1 -p "			Press a key start the capture ..."
+	clear
+	./pcap_writer $file $filter $packets
+}
+
+read_packets()
+{
+	clear
+	echo    "			Lets read network packets from a pcap file ...!!!"
+	echo
+	echo    "			Displaying pcap files in current directory : "
+	echo
+	ls *.pcap
+	echo
+	read -p "			Enter a pcap filename to read from : " file
+	echo 	"			selected file : $file"
+	echo
+	read -p "			Enter number of packets to read : " packets
+	echo   "			packets to read : " $packets
+	echo
+	read -n1 -p "			Press a key start reading ..."
+	clear
+	./pcap_reader $file $packets
+}
+
+server()
+{
+	clear
+	echo 	"			This is SERVER, waiting for a client ...!!!"
+	echo
+	read -p "			Enter a filename to create for reading later : " file
+	echo    "			selected file : $file"
+	echo
+	read -p "			Enter IP address; enter "0.0.0.0" for any : " ip
+	echo    "			IP address provided : " $ip
+	echo
+	read -p "			Enter PORT number : " port
+	echo    "			Listening on PORT : " $port
+	echo
+	read -n1 -p "			Press a key start server..."
+	clear
+	./server $file $ip $port
+}
+
+client()
+{
+	clear
+	echo
+	echo    "			This is CLIENT, ready to connect to the server ...!!!"
+	echo    "			Displaying pcap files in current directory : "
+	echo
+	ls *.pcap
+	echo
+	read -p "			Enter a filename to send over network : " file
+	echo    "			selected file : $file"
+	echo
+	read -p "			Enter IP address of server : " ip
+	echo    "			IP address to target" $ip
+	echo
+	read -p "			Enter PORT number to connect on : " port
+	echo    "			Engaging on PORT : " $port
+	echo
+	read -n1 -p " 			Press a key to connect to server ..."
+	clear
+	./client $file $ip $port 
+}
+
+cleanup()
+{
+	echo
+	echo   "			Cleaning up and quitting ...!!!"
+	rm -rfv server
+	rm -rfv client
+	rm -rfv pcap_reader
+	rm -rfv pcap_writer
+	rm -rfv *.pcap
+}
+
+clear
+mainmenu
